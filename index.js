@@ -9,5 +9,5 @@ module.exports = function(cmd, env, args) {
   const envArr = Object.keys(env || {}).map(key => {
     return `${key}=${env[key]}`;
   });
-  addon.exec(cmd, args || [], envArr);
+  addon.exec(cmd, envArr, args || []);
 };

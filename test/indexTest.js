@@ -50,4 +50,11 @@ describe('native-exec', function() {
       );
     });
   });
+
+  describe('04.sh', function() {
+    it('should work with args', function() {
+      var result = child_process.spawnSync('./test/cases/04.sh').stdout.toString('utf-8');
+      assert.ok(result.startsWith('env (GNU'));
+    });
+  });
 });
