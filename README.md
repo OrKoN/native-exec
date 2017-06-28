@@ -31,7 +31,7 @@ var exec = require('native-exec');
 
 exec('ls', {
   newEnvKey: newEnvValue,
-}); // => the process is replaced with ls, which runs and exits
+}); // => the process is replaced with ls -lsa, which runs and exits
 ```
 
 Replace the current process with another one, replace process' env and provide arguments:
