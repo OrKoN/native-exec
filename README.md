@@ -44,10 +44,10 @@ exec('ls', {
 }, '-lsa'); // => the process is replaced with ls, which runs and exits
 ```
 
-# Use case
+## Use case
 
 If you want to have a bootstrap script written in NodeJS you can use this module to replace the bootstrap process with the process that you actually intend to run specifying env and arguments.
 
-# LICENSE
+## LICENSE
 
 MIT
