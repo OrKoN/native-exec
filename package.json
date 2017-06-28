@@ -11,6 +11,9 @@
   "gypfile": true,
   "license": "MIT",
   "scripts": {
-    "test": "node test/indexTest.js"
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "mocha": "^3.4.2"
   }
 }
