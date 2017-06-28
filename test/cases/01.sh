@@ -2,7 +2,7 @@
 
 var exec = require('../..');
 
-exec("env", [], {
+exec("env", {
   fake: 'env',
   any: 'env',
   dißßerent: 'chäräcters',
@@ -13,4 +13,4 @@ exec("env", [], {
   nil: null,
   undefined: undefined,
   etc: undefined,
-});
+}, []);
