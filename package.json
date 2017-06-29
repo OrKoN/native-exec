@@ -1,8 +1,18 @@
 {
   "name": "native-exec",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Module that provides access to POSIX exec* functions",
-  "keywords": ["exec", "replace process", "execl", "execlp", "execle", "execv", "execvp", "execvpe", "bootstrap"],
+  "keywords": [
+    "exec",
+    "replace process",
+    "execl",
+    "execlp",
+    "execle",
+    "execv",
+    "execvp",
+    "execvpe",
+    "bootstrap"
+  ],
   "main": "index.js",
   "author": "Oleksii Rudenko",
   "bugs": {
