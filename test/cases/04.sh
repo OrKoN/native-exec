@@ -2,6 +2,6 @@
 
 var exec = require('../..');
 
-exec("env", {
+exec("ls", {
   fake: 'env',
-}, ['--version']);
+}, ['-lsa']);

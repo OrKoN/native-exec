@@ -15,8 +15,27 @@ void copyArray(char* dest[], unsigned int offset, v8::Local<v8::Array> src) {
     v8::String::Utf8Value arrayElem(Nan::Get(src, i).ToLocalChecked()->ToString());
     std::string arrayElemStr (*arrayElem);
     char* tmp = new char[arrayElemStr.length() +1];
-    strcpy(tmp, arrayElemStr.c_str());  
+    strcpy(tmp, arrayElemStr.c_str());
     dest[i + offset] = tmp;
+  }
+}
+
+void setEnv(v8::Local<v8::Array> src) {
+  unsigned int length = src->Length();
+  v8::Local<v8::String> keyProp = Nan::New<v8::String>("key").ToLocalChecked();
+  v8::Local<v8::String> valueProp = Nan::New<v8::String>("value").ToLocalChecked();
+  for (unsigned int i = 0; i < length; i++) {
+    v8::Local<v8::Object> obj = Nan::Get(src, i).ToLocalChecked()->ToObject();
+
+    v8::String::Utf8Value objKey(Nan::Get(obj, keyProp).ToLocalChecked()->ToString());
+    v8::String::Utf8Value objValue(Nan::Get(obj, valueProp).ToLocalChecked()->ToString());
+
+    std::string objKeyStr (*objKey);
+    char *key = const_cast<char*> ( objKeyStr.c_str() );
+    std::string objValueStr (*objValue);
+    char *value = const_cast<char*> ( objValueStr.c_str() );
+
+    setenv(key, value, 1);
   }
 }
 
@@ -33,11 +52,9 @@ void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   std::string str (*val);
   char *command = const_cast<char*> ( str.c_str() );
 
-  // build env,:...env, NULL
+  // set env on the current process
   v8::Local<v8::Array> envArr = v8::Local<v8::Array>::Cast(info[1]);
-  char* env[envArr->Length() + 1];
-  copyArray(env, 0, envArr);
-  env[envArr->Length()] = NULL;
+  setEnv(envArr);
 
   // build args: command, ...args, NULL
   v8::Local<v8::Array> argsArr = v8::Local<v8::Array>::Cast(info[2]);
@@ -51,7 +68,7 @@ void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   doNotCloseStreamsOnExit(1); //stdout
   doNotCloseStreamsOnExit(2); //stderr
 
-  execvpe(command, args, env);
+  execvp(command, args);
 }
 
 void Init(v8::Local<v8::Object> exports) {
