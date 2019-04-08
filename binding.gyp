@@ -2,7 +2,8 @@
   "targets": [
     {
       "target_name": "addon",
-      "sources": [ "index.cc" ],
+      "sources": ["index.cc"],
+      "cflags": ["-std=c++11"],
       "include_dirs": [
         "<!(node -e \"require('nan')\")"
       ]
