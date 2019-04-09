@@ -47,4 +47,12 @@ describe('native-exec', function() {
       assert.ok(result.startsWith('total'));
     });
   });
+
+  describe('failure.sh', function() {
+    it('should throw an exception in case of failure and preserve the environment', function() {
+      var result = child_process.spawnSync('./test/cases/failure.sh').stdout.toString('utf-8');
+      assert.ok(result.indexOf('err.code=ENOENT\n') !== -1);
+      assert.ok(result.indexOf('TEST_ENV=before\n') !== -1);
+    });
+  });
 });

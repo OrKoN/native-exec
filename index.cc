@@ -1,6 +1,12 @@
+#include <map>
+#include <memory>
+#include <string>
+
 #include <nan.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+typedef std::map<std::string, std::unique_ptr<std::string>> Environment;
 
 int doNotCloseStreamsOnExit(int desc) {
   int flags = fcntl(desc, F_GETFD, 0);
@@ -20,7 +26,9 @@ void copyArray(char* dest[], unsigned int offset, v8::Local<v8::Array> src) {
   }
 }
 
-void setEnv(v8::Local<v8::Array> src) {
+Environment updateEnvironment(v8::Local<v8::Array> src) {
+  Environment envBackup;
+
   unsigned int length = src->Length();
   v8::Local<v8::String> keyProp = Nan::New<v8::String>("key").ToLocalChecked();
   v8::Local<v8::String> valueProp = Nan::New<v8::String>("value").ToLocalChecked();
@@ -35,8 +43,16 @@ void setEnv(v8::Local<v8::Array> src) {
     std::string objValueStr (*objValue);
     char *value = const_cast<char*> ( objValueStr.c_str() );
 
+    char *currentValue = getenv(key);
+    if (currentValue == nullptr) {
+      envBackup[objKeyStr] = nullptr;
+    } else {
+      envBackup[objKeyStr] = std::unique_ptr<std::string>(new std::string(currentValue));
+    }
     setenv(key, value, 1);
   }
+
+  return envBackup;
 }
 
 void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
@@ -54,7 +70,7 @@ void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
 
   // set env on the current process
   v8::Local<v8::Array> envArr = v8::Local<v8::Array>::Cast(info[1]);
-  setEnv(envArr);
+  Environment envBackup = updateEnvironment(envArr);
 
   // build args: command, ...args, NULL
   v8::Local<v8::Array> argsArr = v8::Local<v8::Array>::Cast(info[2]);
@@ -68,7 +84,24 @@ void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   doNotCloseStreamsOnExit(1); //stdout
   doNotCloseStreamsOnExit(2); //stderr
 
-  execvp(command, args);
+  if(execvp(command, args) < 0) {
+    int savedErrno = errno;
+
+    // Restore environment if execution fails
+    for (auto&& entry : envBackup) {
+      const char *key = entry.first.c_str();
+      std::unique_ptr<std::string> value(entry.second.release());
+
+      if (value) {
+        setenv(key, value->c_str(), 1);
+      } else {
+        unsetenv(key);
+      }
+    }
+
+    v8::Local<v8::Value> exc = Nan::ErrnoException(savedErrno, "execvp", "native-exec failed");
+    Nan::ThrowError(exc);
+  }
 }
 
 void Init(v8::Local<v8::Object> exports) {
