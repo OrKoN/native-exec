@@ -1,5 +1,5 @@
 {
-  "name": "native-exec",
+  "name": "@triggi/native-exec",
   "version": "0.2.1",
   "description": "Module that provides access to POSIX exec* functions",
   "keywords": [
@@ -16,11 +16,11 @@
   "main": "index.js",
   "author": "Oleksii Rudenko",
   "bugs": {
-    "url": "http://github.com/OrKoN/native-exec/issues"
+    "url": "http://github.com/olisto/native-exec/issues"
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/OrKoN/native-exec.git"
+    "url": "http://github.com/olisto/native-exec.git"
   },
   "dependencies": {
     "bindings": "~1.5.0",

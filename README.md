@@ -1,9 +1,10 @@
-# native-exec
+# @triggi/native-exec
 
 [![Build Status](https://travis-ci.org/OrKoN/native-exec.svg?branch=master)](https://travis-ci.org/OrKoN/native-exec)
 
 Module that provides access to POSIX exec* functions.
 
+This is a fork of https://github.com/OrKoN/native-exec
 Inspired by: https://github.com/jprichardson/node-kexec
 
 ## Installation
@@ -11,7 +12,7 @@ Inspired by: https://github.com/jprichardson/node-kexec
 requires a C++ compiler installed, most probably.
 
 ```sh
-npm i native-exec
+npm i @triggi/native-exec
 ```
 
 ## Usage
@@ -19,7 +20,7 @@ npm i native-exec
 Replace the current process with another one:
 
 ```
-var exec = require('native-exec');
+var exec = require('@triggi/native-exec');
 
 exec('ls'); // => the process is replaced with ls, which runs and exits
 ```
@@ -27,7 +28,7 @@ exec('ls'); // => the process is replaced with ls, which runs and exits
 Replace the current process with another one and replace process' env:
 
 ```
-var exec = require('native-exec');
+var exec = require('@triggi/native-exec');
 
 exec('ls', {
   newEnvKey: newEnvValue,
@@ -37,7 +38,7 @@ exec('ls', {
 Replace the current process with another one, replace process' env and provide arguments:
 
 ```
-var exec = require('native-exec');
+var exec = require('@triggi/native-exec');
 
 exec('ls', {
   newEnvKey: newEnvValue,
