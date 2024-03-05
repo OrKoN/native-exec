@@ -2,9 +2,10 @@
 #include <memory>
 #include <string>
 
-#include <nan.h>
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <node.h>
 
 typedef std::map<std::string, std::unique_ptr<std::string>> Environment;
 
@@ -15,28 +16,31 @@ int doNotCloseStreamsOnExit(int desc) {
   return fcntl(desc, F_SETFD, flags);
 }
 
-void copyArray(char* dest[], unsigned int offset, v8::Local<v8::Array> src) {
+void copyArray(char* dest[], unsigned int offset, v8::Local<v8::Array> src, v8::Isolate* isolate) {
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   unsigned int length = src->Length();
   for (unsigned int i = 0; i < length; i++) {
-    v8::String::Utf8Value arrayElem(Nan::Get(src, i).ToLocalChecked()->ToString());
-    std::string arrayElemStr (*arrayElem);
-    char* tmp = new char[arrayElemStr.length() +1];
+    v8::Local<v8::Value> arrayElem = src->Get(context, i).ToLocalChecked();
+    v8::String::Utf8Value utf8Value(isolate, arrayElem);
+    std::string arrayElemStr(*utf8Value);
+    char* tmp = new char[arrayElemStr.length() + 1];
     strcpy(tmp, arrayElemStr.c_str());
     dest[i + offset] = tmp;
   }
 }
 
-Environment updateEnvironment(v8::Local<v8::Array> src) {
+Environment updateEnvironment(v8::Local<v8::Array> src, v8::Isolate* isolate) {
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   Environment envBackup;
 
   unsigned int length = src->Length();
-  v8::Local<v8::String> keyProp = Nan::New<v8::String>("key").ToLocalChecked();
-  v8::Local<v8::String> valueProp = Nan::New<v8::String>("value").ToLocalChecked();
+  v8::Local<v8::String> keyProp = v8::String::NewFromUtf8(isolate, "key").ToLocalChecked();
+  v8::Local<v8::String> valueProp = v8::String::NewFromUtf8(isolate, "value").ToLocalChecked();
   for (unsigned int i = 0; i < length; i++) {
-    v8::Local<v8::Object> obj = Nan::Get(src, i).ToLocalChecked()->ToObject();
+    v8::Local<v8::Object> obj = src->Get(context, i).ToLocalChecked()->ToObject(context).ToLocalChecked();
 
-    v8::String::Utf8Value objKey(Nan::Get(obj, keyProp).ToLocalChecked()->ToString());
-    v8::String::Utf8Value objValue(Nan::Get(obj, valueProp).ToLocalChecked()->ToString());
+    v8::String::Utf8Value objKey(isolate, obj->Get(context, keyProp).ToLocalChecked());
+    v8::String::Utf8Value objValue(isolate, obj->Get(context, valueProp).ToLocalChecked());
 
     std::string objKeyStr (*objKey);
     char *key = const_cast<char*> ( objKeyStr.c_str() );
@@ -55,7 +59,9 @@ Environment updateEnvironment(v8::Local<v8::Array> src) {
   return envBackup;
 }
 
-void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
+void Method(const v8::FunctionCallbackInfo<v8::Value>& info) {
+  v8::Isolate* isolate = info.GetIsolate();
+  v8::Local<v8::Context> context = isolate->GetCurrentContext();
   if (info.Length() < 3) {
     return;
   }
@@ -64,19 +70,19 @@ void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
   }
 
   // get command
-  v8::String::Utf8Value val(info[0]->ToString());
+  v8::String::Utf8Value val(isolate, info[0]->ToString(context).ToLocalChecked());
   std::string str (*val);
   char *command = const_cast<char*> ( str.c_str() );
 
   // set env on the current process
   v8::Local<v8::Array> envArr = v8::Local<v8::Array>::Cast(info[1]);
-  Environment envBackup = updateEnvironment(envArr);
+  Environment envBackup = updateEnvironment(envArr, isolate);
 
   // build args: command, ...args, NULL
   v8::Local<v8::Array> argsArr = v8::Local<v8::Array>::Cast(info[2]);
   char* args[argsArr->Length() + 2];
   args[0] = command;
-  copyArray(args, 1, argsArr);
+  copyArray(args, 1, argsArr, isolate);
   args[argsArr->Length() + 1] = NULL;
 
   // fix stream flags
@@ -99,14 +105,12 @@ void Method(const Nan::FunctionCallbackInfo<v8::Value>& info) {
       }
     }
 
-    v8::Local<v8::Value> exc = Nan::ErrnoException(savedErrno, "execvp", "native-exec failed");
-    Nan::ThrowError(exc);
+    isolate->ThrowException(node::ErrnoException(isolate, savedErrno, "execvp", "native-exec failed", nullptr));
   }
 }
 
 void Init(v8::Local<v8::Object> exports) {
-  exports->Set(Nan::New("exec").ToLocalChecked(),
-               Nan::New<v8::FunctionTemplate>(Method)->GetFunction());
+  NODE_SET_METHOD(exports, "exec", Method);
 }
 
 NODE_MODULE(exec, Init)
